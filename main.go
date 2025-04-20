@@ -1,0 +1,46 @@
+package main
+
+import (
+	"fmt"
+	"github.com/go-chi/chi"
+	"master-finanacial-planner/internal/constant"
+	"master-finanacial-planner/internal/entity"
+	"master-finanacial-planner/internal/handler"
+	"master-finanacial-planner/internal/helper"
+	"master-finanacial-planner/internal/repo"
+	"master-finanacial-planner/internal/usecase/finance"
+	"master-finanacial-planner/internal/usecase/user"
+	"net/http"
+)
+
+func main() {
+
+	// setting up the internals
+	dataSourceRepo := repo.NewResource()
+	financeUsecase := finance.NewFinanceUsecase(dataSourceRepo)
+	userUsecase := user.NewUserUsecase(dataSourceRepo)
+	handler := handler.NewFinanceHandler(userUsecase, financeUsecase)
+
+	// setting up the route
+	router := chi.NewRouter()
+
+	// user-route
+	router.Post("/sign-up", handler.SignUpHandler)
+	router.Post("/sign-in", handler.SignInHandler)
+
+	// billing-route
+	router.Get("/service-health", func(w http.ResponseWriter, r *http.Request) {
+		var response entity.ApiResponse
+		response.Data = map[string]interface{}{"message": "Working fine"}
+		response.Error = nil
+		response.Success = true
+		helper.WriteCustomResp(w, http.StatusOK, response)
+	})
+
+	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
+	err := http.ListenAndServe(constant.ConfigPort, router)
+	if err != nil {
+		fmt.Println("Error while starting the master-financial server", err.Error())
+	}
+
+}
