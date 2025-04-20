@@ -3,7 +3,7 @@ package finance
 import (
 	"context"
 	"master-finanacial-planner/internal/entity"
-	"math"
+	"master-finanacial-planner/internal/helper"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func (f FinanceUsecase) GetEffectiveReturnAllocationType(ctx context.Context, r 
 	result["medium-term"] = result["short-term"]*0.6 + result["medium-term"]*0.4
 
 	for k, v := range result {
-		result[k] = roundToTwoDecimals(v)
+		result[k] = helper.RoundToDecimals(v, 1)
 	}
 
 	return &entity.ApiResponse{
@@ -89,10 +89,6 @@ func (f FinanceUsecase) GetNetWorth(ctx context.Context, r *http.Request) (*enti
 		Success: true,
 	}, nil
 
-}
-
-func roundToTwoDecimals(value float64) float64 {
-	return math.Round(value*10) / 10
 }
 
 func (f FinanceUsecase) GetAssetClass(ctx context.Context, r *http.Request) (*entity.ApiResponse, error) {
