@@ -45,7 +45,7 @@ func (f FinanceUsecase) GetInvestingSurplus(ctx context.Context, r *http.Request
 	return &entity.ApiResponse{
 		Data: map[string]interface{}{
 			"message":           "Investing surplus data fetched successfully",
-			"effective-returns": data,
+			"investing-surplus": data,
 		},
 		Success: true,
 	}, nil

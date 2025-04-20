@@ -48,9 +48,9 @@ func main() {
 	// finance-route
 
 	// get routes
-	router.Get("/get-assets", handler.GetAssetClassHandler)
+	router.Get("/get/asset-classes", handler.GetAssetClassHandler)
 	// get effective returns on allocation type
-	router.Get("/get-effective-assets", handler.GetEffectiveReturnAllocationTypeHandler)
+	router.Get("/get/allocation/effective-assets", handler.GetEffectiveReturnAllocationTypeHandler)
 	// investing surplus
 	router.Get("/investing-surplus", handler.GetInvestingSurplusHandler)
 	// investing
