@@ -46,7 +46,11 @@ func main() {
 	router.Post("/sign-in", handler.SignInHandler)
 
 	// finance-route
+
+	// get routes
 	router.Get("/get-assets", handler.GetAssetClassHandler)
+	// get effective returns on allocation type
+	router.Get("/get-effective-assets", handler.GetEffectiveReturnAllocationTypeHandler)
 
 	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
 	err = http.ListenAndServe(constant.ConfigPort, router)

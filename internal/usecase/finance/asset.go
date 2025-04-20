@@ -3,8 +3,42 @@ package finance
 import (
 	"context"
 	"master-finanacial-planner/internal/entity"
+	"math"
 	"net/http"
 )
+
+func (f FinanceUsecase) GetEffectiveReturnAllocationType(ctx context.Context, r *http.Request) (*entity.ApiResponse, error) {
+	data, err := f.financeRepo.GetAllAllocationTypeConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]float64)
+
+	for _, row := range data {
+		x := row.AssetReturns * row.AllocationInPercentage / 100
+		result[row.AllocationTypeName] += x
+	}
+
+	result["medium-term"] = result["short-term"]*0.6 + result["medium-term"]*0.4
+
+	for k, v := range result {
+		result[k] = roundToTwoDecimals(v)
+	}
+
+	return &entity.ApiResponse{
+		Data: map[string]interface{}{
+			"message":           "Asset class data fetched successfully",
+			"effective-returns": result,
+		},
+		Success: true,
+	}, nil
+
+}
+
+func roundToTwoDecimals(value float64) float64 {
+	return math.Round(value*10) / 10
+}
 
 func (f FinanceUsecase) GetAssetClass(ctx context.Context, r *http.Request) (*entity.ApiResponse, error) {
 	data, err := f.financeRepo.GetAssetClass(ctx)
