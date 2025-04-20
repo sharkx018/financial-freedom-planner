@@ -7,7 +7,8 @@ import (
 )
 
 type FinanceUsecase interface {
-	// GetSipAllocation(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
+	GetAssetClass(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
+	//GetSipAllocation(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 }
 
 type UserUsecases interface {

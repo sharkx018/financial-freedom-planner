@@ -1,6 +1,8 @@
 package finance
 
-import "master-finanacial-planner/internal/repo"
+import (
+	"master-finanacial-planner/internal/repo"
+)
 
 type FinanceUsecase struct {
 	financeRepo repo.ResourceRepo

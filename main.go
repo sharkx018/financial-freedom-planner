@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi"
+	"log"
 	"master-finanacial-planner/internal/constant"
 	"master-finanacial-planner/internal/entity"
 	"master-finanacial-planner/internal/handler"
@@ -15,8 +16,15 @@ import (
 
 func main() {
 
+	// Initialize the database connection
+	db, err := repo.InitializeDB()
+	if err != nil {
+		log.Fatalf("Database connection failed: %v", err)
+	}
+	defer db.Close() // Ensure the DB connection closes when
+
 	// setting up the internals
-	dataSourceRepo := repo.NewResource()
+	dataSourceRepo := repo.NewResource(db)
 	financeUsecase := finance.NewFinanceUsecase(dataSourceRepo)
 	userUsecase := user.NewUserUsecase(dataSourceRepo)
 	handler := handler.NewFinanceHandler(userUsecase, financeUsecase)
@@ -24,11 +32,7 @@ func main() {
 	// setting up the route
 	router := chi.NewRouter()
 
-	// user-route
-	router.Post("/sign-up", handler.SignUpHandler)
-	router.Post("/sign-in", handler.SignInHandler)
-
-	// billing-route
+	// health check
 	router.Get("/service-health", func(w http.ResponseWriter, r *http.Request) {
 		var response entity.ApiResponse
 		response.Data = map[string]interface{}{"message": "Working fine"}
@@ -37,8 +41,15 @@ func main() {
 		helper.WriteCustomResp(w, http.StatusOK, response)
 	})
 
+	// user-route
+	router.Post("/sign-up", handler.SignUpHandler)
+	router.Post("/sign-in", handler.SignInHandler)
+
+	// finance-route
+	router.Get("/get-assets", handler.GetAssetClassHandler)
+
 	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
-	err := http.ListenAndServe(constant.ConfigPort, router)
+	err = http.ListenAndServe(constant.ConfigPort, router)
 	if err != nil {
 		fmt.Println("Error while starting the master-financial server", err.Error())
 	}
