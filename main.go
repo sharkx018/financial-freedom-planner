@@ -53,6 +53,8 @@ func main() {
 	router.Get("/get-effective-assets", handler.GetEffectiveReturnAllocationTypeHandler)
 	// investing surplus
 	router.Get("/investing-surplus", handler.GetInvestingSurplusHandler)
+	// investing
+	router.Get("/net-worth", handler.GetNetWorthHandler)
 
 	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
 	err = http.ListenAndServe(constant.ConfigPort, router)

@@ -52,6 +52,45 @@ func (f FinanceUsecase) GetInvestingSurplus(ctx context.Context, r *http.Request
 
 }
 
+func (f FinanceUsecase) GetNetWorth(ctx context.Context, r *http.Request) (*entity.ApiResponse, error) {
+
+	// liquid and Illiquid
+	data, err := f.financeRepo.GetLiquidAndIlliquidAssets(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// liabilities
+	liabilitiesAmount, err := f.financeRepo.GetAllLiability(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var totalAsset float64
+	var liquidAsset float64
+
+	for k, v := range data {
+		totalAsset += v
+
+		if k == "liquid" {
+			liquidAsset += v
+		}
+	}
+
+	netWorth := totalAsset - liabilitiesAmount
+
+	return &entity.ApiResponse{
+		Data: map[string]interface{}{
+			"message":      "Net Worth info fetched successfully",
+			"total_asset":  totalAsset,
+			"liquid_asset": liquidAsset,
+			"net_worth":    netWorth,
+		},
+		Success: true,
+	}, nil
+
+}
+
 func roundToTwoDecimals(value float64) float64 {
 	return math.Round(value*10) / 10
 }

@@ -12,6 +12,8 @@ type ResourceRepo interface {
 	GetAssetClass(ctx context.Context) ([]entity.AssetClass, error)
 	GetAllAllocationTypeConfig(ctx context.Context) ([]AllocationTypeConfig, error)
 	GetInvestingSurplus(ctx context.Context) (float64, error)
+	GetLiquidAndIlliquidAssets(ctx context.Context) (map[string]float64, error)
+	GetAllLiability(ctx context.Context) (float64, error)
 }
 
 type ResourceRepository struct {
@@ -131,4 +133,63 @@ func (r *ResourceRepository) GetInvestingSurplus(ctx context.Context) (float64, 
 
 	// Return the total surplus
 	return totalSurplus, nil
+}
+
+func (r *ResourceRepository) GetLiquidAndIlliquidAssets(ctx context.Context) (map[string]float64, error) {
+	// Define the query to get liquid and illiquid asset sums
+	query := `
+		SELECT 
+			type,
+			SUM(amount) 
+		FROM investments
+		GROUP BY type
+	`
+
+	// Prepare a map to store the results
+	assets := make(map[string]float64)
+
+	// Execute the query
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying liquid and illiquid assets data: %v", err)
+	}
+	defer rows.Close()
+
+	// Iterate through the results
+	for rows.Next() {
+		var assetType string
+		var totalAmount float64
+
+		// Scan the row into variables
+		if err := rows.Scan(&assetType, &totalAmount); err != nil {
+			logger.LogError(ctx, err.Error())
+			return nil, fmt.Errorf("error scanning liquid and illiquid asset row: %v", err)
+		}
+
+		// Store the result in the map
+		assets[assetType] = totalAmount
+	}
+
+	// Check for errors during iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", err)
+	}
+
+	return assets, nil
+}
+
+func (r *ResourceRepository) GetAllLiability(ctx context.Context) (float64, error) {
+	// Define the query to get the sum of liabilities
+	query := `SELECT SUM(amount) FROM liabilities`
+
+	var totalAmount float64
+
+	// Use QueryRowContext since we expect a single value
+	err := r.db.QueryRowContext(ctx, query).Scan(&totalAmount)
+	if err != nil {
+		logger.LogError(ctx, fmt.Sprintf("Error querying total liabilities: %v. Query: %s", err, query))
+		return 0, fmt.Errorf("error querying total liabilities: %w", err)
+	}
+
+	return totalAmount, nil
 }
