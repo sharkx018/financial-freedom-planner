@@ -9,6 +9,7 @@ import (
 type FinanceUsecase interface {
 	GetAssetClass(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 	GetEffectiveReturnAllocationType(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
+	GetInvestingSurplus(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 	//GetSipAllocation(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 }
 

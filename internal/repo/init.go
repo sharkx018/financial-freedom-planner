@@ -11,7 +11,7 @@ import (
 type ResourceRepo interface {
 	GetAssetClass(ctx context.Context) ([]entity.AssetClass, error)
 	GetAllAllocationTypeConfig(ctx context.Context) ([]AllocationTypeConfig, error)
-	//Get(ctx context.Context) ([]AssetClass, error)
+	GetInvestingSurplus(ctx context.Context) (float64, error)
 }
 
 type ResourceRepository struct {
@@ -109,4 +109,26 @@ func (r *ResourceRepository) GetAllAllocationTypeConfig(ctx context.Context) ([]
 
 	// Return the slice of AssetClass
 	return assetClasses, nil
+}
+
+func (r *ResourceRepository) GetInvestingSurplus(ctx context.Context) (float64, error) {
+	query := `SELECT 
+					SUM(CASE
+							WHEN is_inflow = TRUE THEN amount
+							WHEN is_inflow = FALSE THEN -amount
+						END) AS total_surplus
+				FROM cashflow;`
+
+	var totalSurplus float64
+
+	// Use QueryRowContext for a query expecting a single row of data
+	err := r.db.QueryRowContext(ctx, query).Scan(&totalSurplus)
+	if err != nil {
+		// Log the error and return a detailed error message
+		logger.LogError(ctx, fmt.Sprintf("error querying investing surplus: %v", err))
+		return 0, fmt.Errorf("error querying investing surplus: %w", err)
+	}
+
+	// Return the total surplus
+	return totalSurplus, nil
 }

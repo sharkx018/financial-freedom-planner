@@ -36,6 +36,22 @@ func (f FinanceUsecase) GetEffectiveReturnAllocationType(ctx context.Context, r 
 
 }
 
+func (f FinanceUsecase) GetInvestingSurplus(ctx context.Context, r *http.Request) (*entity.ApiResponse, error) {
+	data, err := f.financeRepo.GetInvestingSurplus(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.ApiResponse{
+		Data: map[string]interface{}{
+			"message":           "Investing surplus data fetched successfully",
+			"effective-returns": data,
+		},
+		Success: true,
+	}, nil
+
+}
+
 func roundToTwoDecimals(value float64) float64 {
 	return math.Round(value*10) / 10
 }
