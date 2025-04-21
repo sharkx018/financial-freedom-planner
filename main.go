@@ -56,6 +56,9 @@ func main() {
 	// investing
 	router.Get("/net-worth", handler.GetNetWorthHandler)
 
+	// sip allocator
+	router.Get("/get/sip-allocator", handler.SipAllocatorHandler)
+
 	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
 	err = http.ListenAndServe(constant.ConfigPort, router)
 	if err != nil {

@@ -14,6 +14,9 @@ type ResourceRepo interface {
 	GetInvestingSurplus(ctx context.Context) (float64, error)
 	GetLiquidAndIlliquidAssets(ctx context.Context) (map[string]float64, error)
 	GetAllLiability(ctx context.Context) (float64, error)
+	GetGoals(ctx context.Context) ([]entity.Goals, error)
+	GetAllocationByYearLeft(ctx context.Context, yearsLeft int64) ([]entity.AllocationType, error)
+	GetAllocationConfigByAllocationTypeId(ctx context.Context, allocationTypeId int64) ([]entity.AllocationTypeConfig, error)
 }
 
 type ResourceRepository struct {
@@ -192,4 +195,133 @@ func (r *ResourceRepository) GetAllLiability(ctx context.Context) (float64, erro
 	}
 
 	return totalAmount, nil
+}
+
+func (r *ResourceRepository) GetGoals(ctx context.Context) ([]entity.Goals, error) {
+	var goals []entity.Goals
+
+	query := `SELECT 
+				id,
+				name,
+				description,
+				years_left,
+				inflation_percentage,
+				today_amount,
+				allocated_amount,
+				sip_step_up_percentage
+			  FROM goals`
+
+	// Execute the query
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying goals data: %v", err)
+	}
+	defer rows.Close() // Ensure the rows iterator is closed properly
+
+	// Iterate through the rows
+	for rows.Next() {
+		var goal entity.Goals
+		if err := rows.Scan(
+			&goal.ID,
+			&goal.Name,
+			&goal.Description,
+			&goal.YearsLeft,
+			&goal.InflationPercentage,
+			&goal.TodayAmount,
+			&goal.AllocatedAmount,
+			&goal.SIPStepUpPercentage,
+		); err != nil {
+			logger.LogError(ctx, err.Error())
+			return nil, fmt.Errorf("error scanning goal row: %v", err)
+		}
+		goals = append(goals, goal)
+	}
+
+	// Check for any errors that occurred during iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", err)
+	}
+
+	// Return the list of goals
+	return goals, nil
+}
+
+func (r *ResourceRepository) GetAllocationByYearLeft(ctx context.Context, yearsLeft int64) ([]entity.AllocationType, error) {
+	var allocationTypes []entity.AllocationType
+
+	query := `SELECT 
+					id,
+					name
+			  FROM 
+					allocation_type
+			  WHERE 
+					$1 >= min_age 
+					AND $1 <= COALESCE(max_age, $1);`
+
+	// Execute the query with the yearsLeft parameter
+	rows, err := r.db.QueryContext(ctx, query, yearsLeft)
+	if err != nil {
+		return nil, fmt.Errorf("error querying allocation types for years left: %v", err)
+	}
+	defer rows.Close() // Ensure the rows iterator is closed properly
+
+	// Iterate through the rows and scan results into the struct
+	for rows.Next() {
+		var allocationType entity.AllocationType
+		if err := rows.Scan(
+			&allocationType.ID,
+			&allocationType.Name,
+		); err != nil {
+			logger.LogError(ctx, err.Error())
+			return nil, fmt.Errorf("error scanning allocation type row: %v", err)
+		}
+		allocationTypes = append(allocationTypes, allocationType)
+	}
+
+	// Check for any errors that occurred during iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", err)
+	}
+
+	// Return the list of allocation types
+	return allocationTypes, nil
+}
+
+func (r *ResourceRepository) GetAllocationConfigByAllocationTypeId(ctx context.Context, allocationTypeId int64) ([]entity.AllocationTypeConfig, error) {
+	var allocationTypeConfigs []entity.AllocationTypeConfig
+
+	query := `SELECT  ac.name,
+				COALESCE(atc.allocation_in_percentage, 0) as allocation_in_percentage
+				FROM allocation_type_config AS atc
+				RIGHT OUTER JOIN asset_class AS ac
+					ON atc.asset_class_id = ac.id AND atc.allocation_type_id = $1;`
+
+	// Execute the query with the yearsLeft parameter
+	rows, err := r.db.QueryContext(ctx, query, allocationTypeId)
+	if err != nil {
+		return nil, fmt.Errorf("error querying allocation types config for allocation type: %v", err)
+	}
+	defer rows.Close() // Ensure the rows iterator is closed properly
+
+	// Iterate through the rows and scan results into the struct
+	for rows.Next() {
+		var allocationTypeConfig entity.AllocationTypeConfig
+		if err := rows.Scan(
+			&allocationTypeConfig.AssetName,
+			&allocationTypeConfig.AllocationInPercentage,
+			//&allocationTypeConfig.AssetReturnInPercentage,
+		); err != nil {
+			logger.LogError(ctx, err.Error())
+			return nil, fmt.Errorf("error scanning allocation type row: %v", err)
+		}
+		allocationTypeConfigs = append(allocationTypeConfigs, allocationTypeConfig)
+	}
+
+	// Check for any errors that occurred during iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %v", err)
+	}
+
+	// Return the list of allocation types
+	return allocationTypeConfigs, nil
 }
