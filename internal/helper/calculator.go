@@ -1,6 +1,9 @@
 package helper
 
-import "math"
+import (
+	"master-finanacial-planner/internal/entity"
+	"math"
+)
 
 func InflationCalculator(amount float64, time int64, rate float64) float64 {
 	// Calculate future value including inflation
@@ -25,4 +28,30 @@ func CalculateSIPRequired(targetAmount float64, years int64, annualGrowthRate fl
 	sipAmount := targetAmount / denominator
 
 	return RoundToDecimals(sipAmount, 2)
+}
+
+func FireCalculator(currentAge, retirementAge, earlyRetirementAge int, monthlyExpense float64, inflationPercentage float64) entity.FireResponse {
+
+	todayYearlyExpense := monthlyExpense * 12
+	retirementYearlyExpense := todayYearlyExpense * math.Pow(1+inflationPercentage/100, float64(retirementAge-currentAge))
+
+	leanFire := retirementYearlyExpense * 15
+	fire := retirementYearlyExpense * 25
+	fatFire := retirementYearlyExpense * 50
+
+	diff := retirementAge - earlyRetirementAge
+
+	fixedGrowthRate := .10 // (percentage)/100
+
+	earlyRetirementAmount := (fire) / math.Pow(1.0+fixedGrowthRate, float64(diff))
+
+	return entity.FireResponse{
+		YearlyExpense:           RoundToDecimals(todayYearlyExpense, 1),
+		RetirementYearlyExpense: RoundToDecimals(retirementYearlyExpense, 1),
+		LeanFire:                RoundToDecimals(leanFire, 1),
+		Fire:                    RoundToDecimals(fire, 1),
+		FatFire:                 RoundToDecimals(fatFire, 1),
+		EarlyRetirementAmount:   RoundToDecimals(earlyRetirementAmount, 1),
+	}
+
 }

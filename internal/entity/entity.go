@@ -61,3 +61,12 @@ type ValueContribution struct {
 	Value                  float64 `json:"value"`                   // varchar corresponds to string
 	ContributionPercentage float64 `json:"contribution_percentage"` // varchar corresponds to string
 }
+
+type FireResponse struct {
+	YearlyExpense           float64
+	RetirementYearlyExpense float64
+	LeanFire                float64
+	Fire                    float64
+	FatFire                 float64
+	EarlyRetirementAmount   float64
+}
