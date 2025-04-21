@@ -45,5 +45,4 @@ func (h *Handler) SignInHandler(w http.ResponseWriter, r *http.Request) {
 		response.Success = true
 		helper.WriteCustomResp(w, http.StatusOK, response)
 	}
-
 }

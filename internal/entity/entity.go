@@ -38,7 +38,26 @@ type AllocationType struct {
 }
 
 type AllocationTypeConfig struct {
-	AssetName              string  `json:"name"`                     // bigint corresponds to int64 in Go
+	AssetId                int64   `json:"asset_id"`                 // bigint corresponds to int64 in Go
+	AssetName              string  `json:"asset_name"`               // bigint corresponds to int64 in Go
 	AllocationInPercentage float64 `json:"allocation_in_percentage"` // varchar corresponds to string
-	//AssetReturnInPercentage string `json:"asset_return_in_percentage"` // double precision corresponds to float64
+}
+
+type InvestableAssetAllocation struct {
+	AssetId                int64   `json:"asset_id"`                // bigint corresponds to int64 in Go
+	AssetName              string  `json:"asset_name"`              // varchar corresponds to string
+	Value                  float64 `json:"value"`                   // varchar corresponds to string
+	ContributionPercentage float64 `json:"contribution_percentage"` // varchar corresponds to string
+}
+
+type InvestableAssetAllocationAPIResponse struct {
+	AssetId   int64             `json:"asset_id"`   // bigint corresponds to int64 in Go
+	AssetName string            `json:"asset_name"` // varchar corresponds to string
+	Current   ValueContribution `json:"current"`
+	Required  ValueContribution `json:"required"`
+}
+
+type ValueContribution struct {
+	Value                  float64 `json:"value"`                   // varchar corresponds to string
+	ContributionPercentage float64 `json:"contribution_percentage"` // varchar corresponds to string
 }

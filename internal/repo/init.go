@@ -17,6 +17,7 @@ type ResourceRepo interface {
 	GetGoals(ctx context.Context) ([]entity.Goals, error)
 	GetAllocationByYearLeft(ctx context.Context, yearsLeft int64) ([]entity.AllocationType, error)
 	GetAllocationConfigByAllocationTypeId(ctx context.Context, allocationTypeId int64) ([]entity.AllocationTypeConfig, error)
+	GetCurrentInvestableData(ctx context.Context) ([]entity.InvestableAssetAllocation, error)
 }
 
 type ResourceRepository struct {
@@ -290,7 +291,9 @@ func (r *ResourceRepository) GetAllocationByYearLeft(ctx context.Context, yearsL
 func (r *ResourceRepository) GetAllocationConfigByAllocationTypeId(ctx context.Context, allocationTypeId int64) ([]entity.AllocationTypeConfig, error) {
 	var allocationTypeConfigs []entity.AllocationTypeConfig
 
-	query := `SELECT  ac.name,
+	query := `SELECT  
+    				ac.id as asset_id,
+    				ac.name as asset_name,
 				COALESCE(atc.allocation_in_percentage, 0) as allocation_in_percentage
 				FROM allocation_type_config AS atc
 				RIGHT OUTER JOIN asset_class AS ac
@@ -307,9 +310,9 @@ func (r *ResourceRepository) GetAllocationConfigByAllocationTypeId(ctx context.C
 	for rows.Next() {
 		var allocationTypeConfig entity.AllocationTypeConfig
 		if err := rows.Scan(
+			&allocationTypeConfig.AssetId,
 			&allocationTypeConfig.AssetName,
 			&allocationTypeConfig.AllocationInPercentage,
-			//&allocationTypeConfig.AssetReturnInPercentage,
 		); err != nil {
 			logger.LogError(ctx, err.Error())
 			return nil, fmt.Errorf("error scanning allocation type row: %v", err)
@@ -324,4 +327,52 @@ func (r *ResourceRepository) GetAllocationConfigByAllocationTypeId(ctx context.C
 
 	// Return the list of allocation types
 	return allocationTypeConfigs, nil
+}
+
+func (r *ResourceRepository) GetCurrentInvestableData(ctx context.Context) ([]entity.InvestableAssetAllocation, error) {
+	var currentInvestableAllocations []entity.InvestableAssetAllocation
+
+	query := `Select
+				   ac.id as asset_id,
+				   ac.name,
+				   COALESCE(sum(amount), 0) as value,
+				   ROUND(((SUM(coalesce(investments.amount, 0)) * 100.0) / SUM(SUM(investments.amount)) OVER ())::numeric, 2) AS contribution_percentage
+			from
+				investments
+			Right outer join
+				asset_class ac
+				on investments.asset_id = ac.id and type = 'liquid'
+			group by ac.id, ac.name`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		// Log the error and return with more context
+		logger.LogError(ctx, fmt.Sprintf("error querying investable data: %v", err))
+		return nil, fmt.Errorf("error querying investable data: %w", err)
+	}
+	defer rows.Close()
+
+	// Process the query results
+	for rows.Next() {
+		var assetAllocation entity.InvestableAssetAllocation // Assuming this is the correct type
+		if err := rows.Scan(
+			&assetAllocation.AssetId,
+			&assetAllocation.AssetName,
+			&assetAllocation.Value,                  // Total value
+			&assetAllocation.ContributionPercentage, // Contribution percentage
+		); err != nil {
+			// Log and handle row scanning errors
+			logger.LogError(ctx, fmt.Sprintf("error scanning investable data row: %v", err))
+			return nil, fmt.Errorf("error scanning investable data row: %w", err)
+		}
+		currentInvestableAllocations = append(currentInvestableAllocations, assetAllocation)
+	}
+
+	// Check for iteration errors
+	if err := rows.Err(); err != nil {
+		logger.LogError(ctx, fmt.Sprintf("error iterating rows in 'GetCurrentInvestableData': %v", err))
+		return nil, fmt.Errorf("error iterating rows in 'GetCurrentInvestableData': %w", err)
+	}
+
+	return currentInvestableAllocations, nil
 }

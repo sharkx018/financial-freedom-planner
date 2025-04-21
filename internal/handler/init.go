@@ -12,6 +12,7 @@ type FinanceUsecase interface {
 	GetInvestingSurplus(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 	GetNetWorth(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 	SipAllocator(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
+	GetInvestableAssetAllocation(ctx context.Context, r *http.Request) (*entity.ApiResponse, error)
 }
 
 type UserUsecases interface {

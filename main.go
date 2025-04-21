@@ -59,6 +59,13 @@ func main() {
 	// sip allocator
 	router.Get("/get/sip-allocator", handler.SipAllocatorHandler)
 
+	//investable asset allocation
+	router.Get("/analyse/investable-asset-allocation", handler.GetInvestableAssetAllocation)
+
+	// TODO: asset sub division
+	// Todo: Decrement Year api
+	// Todo: add/update goals api
+
 	fmt.Printf("Master-financial Server Started at port %s\n", constant.ConfigPort)
 	err = http.ListenAndServe(constant.ConfigPort, router)
 	if err != nil {
